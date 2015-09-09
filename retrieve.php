@@ -311,6 +311,17 @@ $datas['aleberco'] = function() {
 	return $data;
 };
 
+$datas['cscaletta'] = function() {
+	$url = "http://medium.com/feed/@ClaudioScaletta";
+	$data = new RSSMetadata("cscaletta", "Claudio Scaletta", $url);
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content = $s->node('//div[@class="section-content"]')->html();
+	};
+	$data->add_getter(rss_getter($url), $get_content);
+	return $data;
+};
+
 $func = array();
 $cmd = array();
 
