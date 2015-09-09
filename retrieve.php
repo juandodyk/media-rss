@@ -183,9 +183,12 @@ $datas['paulkrugman'] = function() {
 	set_rss_getter($data, $url);
 	$data->set_get_content(function(&$art) {
 		$s = new scrapper($art->link, array('google_cache'));
+		$content = '';
 		foreach($s->query('//div[@class="entry-content"]/*') as $p)
 			if($p->attr('id') != "sharetools-story")
-				$art->content .= $p->html();
+				$content .= $p->html();
+		$art->content .= $content;
+		if(!$content) $art->saved = false;
 	});
 	return $data;
 };
@@ -309,7 +312,9 @@ $datas['aleberco'] = function() {
 };
 
 $func = array();
+$cmd = array();
 
+$cmd['s'] = "Fetch articles.";
 $func['s'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $s) if(isset($datas[$s])) {
 		$engine = new RSSEngine($datas[$s]());
@@ -317,6 +322,7 @@ $func['s'] = function($val) use($datas) {
 	}
 };
 
+$cmd['dbg'] = "Debug: fetch articles without saving.";
 $func['dbg'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $s) if(isset($datas[$s])) {
 		$data = $datas[$s]();
@@ -338,7 +344,8 @@ $func['dbg'] = function($val) use($datas) {
 	}
 };
 
-$func['r'] = function($val) use($datas) {
+$cmd['rm'] = "Remove table.";
+$func['rm'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $s) if(isset($datas[$s])) {
 		$storage = new storage($s);
 		$storage->conn->query("delete from $s");
@@ -346,6 +353,7 @@ $func['r'] = function($val) use($datas) {
 	}
 };
 
+$cmd['t'] = "Create table.";
 $func['t'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $s) if(isset($datas[$s])) {
 		$storage = new storage($s);
@@ -354,11 +362,33 @@ $func['t'] = function($val) use($datas) {
 	}
 };
 
+$cmd['r'] = "Read articles.";
+$func['r'] = function($val) use($datas) {
+	foreach(explode(',', $val) as $name) if(isset($datas[$name])) {
+		$storage = new Storage($name);
+		if(!isset($_GET['link'])) {
+			echo "<h1>" . $datas[$name]()->title . "</h1>";
+			foreach($storage->last_articles() as $art)
+				echo "<a href='retrieve.php?r=$name&link=" . urlencode($art->link) . "'>$art->title</a><br>";
+			continue;
+		}
+		$link = urldecode($_GET['link']);
+		$arts = array($link => new Article($link));
+		$storage->fetch_articles($arts);
+		$art = $arts[$link];
+		echo "<html><head><title>$art->title</title></head>";
+		echo "<body><h1>$art->title</h1><p>Por $art->author. <a href='$link'>Link</a> <a href='retrieve.php?r=$name'>Volver</a></p>";
+		echo "$art->content</body></html>";
+	}
+};
+
 echo implode(",", array_keys($datas)) . "<br><br>\n\n";
 
 foreach($_GET as $key => &$val)
-	if($val == "all") $val = implode(",", array_keys($datas));
-foreach($_GET as $key => &$val)
+	if(!$val || $val == "all") $val = implode(",", array_keys($datas));
+foreach($_GET as $key => &$val) if(isset($func[$key]))
 	$func[$key]($val);
+if(!$_GET) foreach($cmd as $c => $desc)
+	echo "<b>$c</b> $desc<br>\n";
 
 ?>
