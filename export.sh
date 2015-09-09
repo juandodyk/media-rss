@@ -1,8 +1,7 @@
 FILES=
 for FILE in `ls`; do
-	if [ "${FILE##*.}" = "php" ] && ! diff $FILE ./php_cache/$FILE > /dev/null; then
+	if [ "${FILE##*.}" = "php" ] then
 		FILES="$FILES $FILE"
-		cp $FILE ./php_cache
 	fi
 done
 echo $FILES
