@@ -1,6 +1,6 @@
 FILES=
 for FILE in `ls`; do
-	if [ "${FILE##*.}" = "php" ] then
+	if [ "${FILE##*.}" = "php" ]; then
 		FILES="$FILES $FILE"
 	fi
 done

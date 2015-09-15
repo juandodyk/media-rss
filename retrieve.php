@@ -322,6 +322,32 @@ $datas['cscaletta'] = function() {
 	return $data;
 };
 
+$datas['anfibia'] = function() {
+	$url = 'http://www.revistaanfibia.com/';
+	$data = new RSSMetadata('anfibia', "Revista Anfibia", $url);
+	$get_arts = function() use($url) {
+		$s = new Scrapper($url);
+		$arts = array();
+		foreach($s->query('//div[@class="cover"]') as $div) {
+			$link = $s->node('div[@class="titulo"]/a', $div->node)->attr('href');
+			$title = $s->node('//h1', $div)->text();
+			$authors = array();
+			foreach($s->query('//h4/a', $div->node) as $a)
+				$authors[] = $a->text();
+			$author = implode($authors, ', ');
+			$content = $s->node('//h3', $div)->html();
+			$arts[] = new Article($link, $title, $author, $content);
+		}
+		return $arts;
+	};
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content = $s->node('//div[@id="content"]')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
 $func = array();
 $cmd = array();
 
