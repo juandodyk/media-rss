@@ -10,7 +10,8 @@ function get_rubric($url) {
 }
 
 function main() {
-	$s = new scrapper('http://www.economist.com/printedition', array('silence'));
+	$date = isset($_GET['d']) ? $_GET['d'] : '';
+	$s = new scrapper("http://www.economist.com/printedition/$date", array('silence'));
 
 	foreach($s->query('//div[starts-with(@class,"section")]') as $div) {
 		foreach($s->query('.//a[@class="node-link"]', $div->node) as $a) {

@@ -330,21 +330,32 @@ $datas['anfibia'] = function() {
 		$arts = array();
 		foreach($s->query('//div[@class="cover"]') as $div) {
 			$link = $s->node('div[@class="titulo"]/a', $div->node)->attr('href');
-			$title = $s->node('//h1', $div)->text();
+			$title = $s->node('.//h1', $div->node)->text();
 			$authors = array();
-			foreach($s->query('//h4/a', $div->node) as $a)
+			foreach($s->query('.//h4/a', $div->node) as $a)
 				$authors[] = $a->text();
 			$author = implode($authors, ', ');
-			$content = $s->node('//h3', $div)->html();
+			$content = $s->node('.//h3', $div->node)->html();
 			$arts[] = new Article($link, $title, $author, $content);
 		}
 		return $arts;
 	};
 	$get_content = function(&$art) {
 		$s = new scrapper($art->link);
-		$art->content = $s->node('//div[@id="content"]')->html();
+		$art->content .= $s->node('//div[@id="content"]')->html();
 	};
 	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
+$datas['monkeycage'] = function() {
+	$url = 'http://feeds.washingtonpost.com/rss/rss_monkey-cage';
+	$data = new RSSMetadata('monkeycage', 'Monkey Cage', $url);
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content = $s->node('//div[@id="article-body"]')->html();
+	};
+	$data->add_getter(rss_getter($url), $get_content);
 	return $data;
 };
 
@@ -368,14 +379,20 @@ $func['dbg'] = function($val) use($datas) {
 		foreach($arts as $link => &$art) {
 			$get_content[$art->link] = $art->get_content;
 			$art->get_content = null;
+			$art->content = str_replace(array("<", ">"), array("&lt;", "&gt;"), $art->content);
 		}
+		echo "<pre>\n";
 		print_r($arts);
+		echo "</pre>\n";
 		foreach($arts as $link => &$art)
 			$art->get_content = $get_content[$art->link];
 		foreach($arts as $link => &$art) {
 			$art->get_content();
 			$art->get_content = null;
+			$art->content = str_replace(array("<", ">"), array("&lt;", "&gt;"), $art->content);
+			echo "<pre>\n";
 			print_r($art);
+			echo "</pre>\n";
 			exit;
 		}
 	}
