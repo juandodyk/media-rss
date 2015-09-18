@@ -349,13 +349,25 @@ $datas['anfibia'] = function() {
 };
 
 $datas['monkeycage'] = function() {
-	$url = 'http://feeds.washingtonpost.com/rss/rss_monkey-cage';
+	$url = 'http://www.washingtonpost.com/blogs/monkey-cage/';
 	$data = new RSSMetadata('monkeycage', 'Monkey Cage', $url);
+	$get_arts = function() use($url) {
+		$s = new Scrapper($url);
+		$arts = array();
+		foreach($s->query('//div[contains(@class, "story-body")]') as $div) {
+			$link = $s->node('.//h3/a', $div->node)->attr('href');
+			$title = $s->node('.//h3/a', $div->node)->text();
+			$author = $s->node('.//span[@class="author"]', $div->node)->text();
+			$content = $s->node('.//div[@class="story-description"]', $div->node)->html();
+			$arts[] = new Article($link, $title, $author, $content);
+		}
+		return $arts;
+	};
 	$get_content = function(&$art) {
 		$s = new scrapper($art->link);
-		$art->content = $s->node('//div[@id="article-body"]')->html();
+		$art->content .= $s->node('//div[@id="article-body"]')->html();
 	};
-	$data->add_getter(rss_getter($url), $get_content);
+	$data->add_getter($get_arts, $get_content);
 	return $data;
 };
 
