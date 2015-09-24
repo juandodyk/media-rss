@@ -132,25 +132,25 @@ $datas['juvinformada'] = function() {
 $datas['lanacionwsj'] = function() {
 	$url = "http://www.lanacion.com.ar/economia/the-wall-street-journal";
 	$data = new RSSMetadata("lanacionwsj", "The Wall Street Journal", $url);
-	$data->get_links = function() use($url) {
-		$arts = array();
+	$get_arts = function() use($url) {
 		$s = new scrapper($url);
-		foreach($s->query('//section[@id="informacion1"]//article') as $art) {
-			$a = $s->node('.//a[@class="info"]', $art->node);
-			$link = "http://www.lanacion.com.ar" . $a->attr('href');
-			$title = $s->node('h2', $a->node)->text();
-			$as = array();
-			foreach($s->query('.//span[@class="autor"]//b', $art->node) as $b)
-				$as[] = $b->text();
-			$author = implode(", ", $as);
-			$arts[$link] = new Article($link, $title, $author);
+		$arts = array();
+		foreach($s->query('//article/h2/a') as $a) {
+			$link = "http://www.lanacion.com.ar". $a->attr('href');
+			$title = $a->text();
+			$arts[] = new Article($link, $title);
 		}
 		return $arts;
 	};
-	$data->set_get_content(function(&$art) {
+	$get_content = function(&$art) {
 		$s = new scrapper($art->link);
-		$art->content = $s->node('//*[@id="cuerpo"]')->html();
-	});
+		$as = array();
+		foreach($s->query('//div[@class="columnista"]//a') as $a)
+			$as[] = $a->text();
+		$art->author = implode(", ", $as);
+		$art->content = $s->node('//section[@id="cuerpo"]')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
 	return $data;
 };
 
