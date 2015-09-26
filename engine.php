@@ -7,6 +7,7 @@ class RSSMetadata {
 	public $rss_name, $title, $link, $description, $encoding = 'utf-8';
 	public $get_links, $get_content;
 	public $days_before_cleanup = 30;
+	public $days_in_rss = 30;
 	public $guid_postfix = 'DBG';
 	public $getters = array();
 	
@@ -74,7 +75,8 @@ class RSSEngine {
 		uasort($arts, function($a, $b) { return $b->tms - $a->tms; });
 		$this->rss_begin();
 		foreach($arts as $link => &$art)
-			$this->rss_add_item($art);
+			if($art->tms >= time() - $data->days_in_rss*24*60*60)
+				$this->rss_add_item($art);
 		$this->rss_close();
 		$this->file_save("rss/$data->rss_name.rss", $this->rss);
 		$this->storage->clean_old($data->days_before_cleanup);

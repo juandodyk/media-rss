@@ -154,6 +154,38 @@ $datas['lanacionwsj'] = function() {
 	return $data;
 };
 
+$datas['lanacion'] = function() {
+	$data = new RSSMetadata("lanacion", "La Nacion Columnistas", "http://www.lanacion.com.ar/");
+	$data->days_in_rss = 2;
+	$get_arts_by = function($author) { return function() use($author) {
+		$s = new Scrapper("http://www.lanacion.com.ar/autor/$author");
+		$arts = array();
+		foreach($s->query('//article/h2/a') as $a) {
+			$link = $a->attr('href');
+			if(starts_with($link, "http")) continue;
+			$link = "http://www.lanacion.com.ar" . $link;
+			$title = $a->text();
+			$arts[] = new Article($link, $title);
+		}
+		return $arts;
+	};};
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$as = array();
+		foreach($s->query('//div[@class="columnista"]//a') as $a)
+			$as[] = $a->text();
+		$art->author = implode(", ", $as);
+		$art->content = $s->node('//section[@id="cuerpo"]')->html();
+	};
+	$authors = array("eduardo-fidanza-614", "carlos-pagni-81", "francisco-olivera-179",
+		             "gabriel-sued-165", "jaime-rosemberg-163", "lucrecia-bullrich-3",
+		             "eduardo-levy-yeyati-319", "francisco-jueguen-12", "hugo-alconada-mon-97",
+		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120");
+	foreach($authors as $author)
+		$data->add_getter($get_arts_by($author), $get_content);
+	return $data;
+};
+
 $datas['mincyt'] = function() {
 	$url = "http://www.mincyt.gob.ar/xml/noticias.xml";
 	$data = new RSSMetadata("mincyt", "Ministerio de Ciencia, Tecnologia e Innovacion Productiva", $url);
