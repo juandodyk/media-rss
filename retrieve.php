@@ -156,7 +156,7 @@ $datas['lanacionwsj'] = function() {
 
 $datas['lanacion'] = function() {
 	$data = new RSSMetadata("lanacion", "La Nacion Columnistas", "http://www.lanacion.com.ar/");
-	$data->days_in_rss = 2;
+	$data->days_in_rss = 1;
 	$get_arts_by = function($author) { return function() use($author) {
 		$s = new Scrapper("http://www.lanacion.com.ar/autor/$author");
 		$arts = array();
@@ -172,7 +172,7 @@ $datas['lanacion'] = function() {
 	$get_content = function(&$art) {
 		$s = new scrapper($art->link);
 		$as = array();
-		foreach($s->query('//div[@class="columnista"]//a') as $a)
+		foreach($s->query('//a[@itemprop="author"]') as $a)
 			$as[] = $a->text();
 		$art->author = implode(", ", $as);
 		$art->content = $s->node('//section[@id="cuerpo"]')->html();
@@ -403,6 +403,42 @@ $datas['monkeycage'] = function() {
 	return $data;
 };
 
+$datas['pagina12'] = function() {
+	$url = 'http://www.pagina12.com.ar/diario/principal/index.html';
+	$data = new RSSMetadata('pagina12', 'Pagina 12 Columnistas', $url);
+	$data->encoding = $enc = "iso-8859-1";
+	$get_arts = function() use($url, $enc) {
+		$s = new Scrapper($url, array('encoding' => $enc));
+		$arts = array();
+		$authors = array('Pertot', 'Nepomuceno', 'Wainfeld', 'Verbitsky', 'Dellatorre',
+			             'Scaletta', 'Granovsky', 'Lukin', 'Abrevaya', 'Natanson');
+		$root = 'http://www.pagina12.com.ar';
+		foreach($s->query('//div[@id="bloque_escriben_hoy"]/ul/li/a') as $a)
+			foreach($authors as $name) if(strpos($a->text(), $name) !== false) {
+				$link = $root . $a->attr('href');
+				$author = $a->text();
+				$links = array();
+				if(strpos($link, '/autores/') !== false) {
+					$s = new scrapper($link, array('encoding' => $enc));
+					foreach ($s->query('//div[@class="noticia"]//a') as $a)
+						$arts[] = new Article($root . $a->attr('href'), '', $author);
+				} else
+					$arts[] = new Article($root . $a->attr('href'), '', $author);
+			}
+		return $arts;
+	};
+	$get_content = function(&$art) use($enc) {
+		$s = new scrapper($art->link, array('encoding' => $enc));
+		$art->title = $s->node('//h2')->text();
+		$art->content .= $s->node('//p[@class="volanta"]')->html();
+		$art->content .= $s->node('//p[@class="intro"]')->html();
+		$art->content .= $s->node('//div[contains(@class, "foto_nota")]')->html();
+		$art->content .= $s->node('//div[@id="cuerpo"]')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
 $func = array();
 $cmd = array();
 
@@ -442,12 +478,14 @@ $func['dbg'] = function($val) use($datas) {
 	}
 };
 
-$cmd['rm'] = "Remove table.";
+$cmd['rm'] = "Remove all articles.";
 $func['rm'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $s) if(isset($datas[$s])) {
+		$days = isset($_GET['last']) ? $_GET['last'] : 1000;
+		$last_tms = time() - $days*24*60*60;
 		$storage = new storage($s);
-		$storage->conn->query("delete from $s");
-		echo "Erased $s<br><br>\n\n";
+		$storage->conn->query("delete from $s where tms > $last_tms");
+		echo "Erased all articles from $s<br><br>\n\n";
 	}
 };
 
@@ -467,7 +505,7 @@ $func['r'] = function($val) use($datas) {
 		if(!isset($_GET['link'])) {
 			echo "<h1>" . $datas[$name]()->title . "</h1>";
 			foreach($storage->last_articles() as $art)
-				echo "<a href='retrieve.php?r=$name&link=" . urlencode($art->link) . "'>$art->title</a><br>";
+				echo "<a href='retrieve.php?r=$name&link=" . urlencode($art->link) . "'>$art->title, by $art->author</a><br>";
 			continue;
 		}
 		$link = urldecode($_GET['link']);
