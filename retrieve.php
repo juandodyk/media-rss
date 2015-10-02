@@ -18,6 +18,26 @@ function set_rss_getter(&$data, $url) {
 
 $datas = array();
 
+/* Template
+
+$datas['...'] = function() {
+	$url = '...';
+	$data = new RSSMetadata('...', '...', $url);
+	$get_arts = function() use($url) {
+		$arts = array();
+		$s = new Scrapper($url);
+		...
+		return $arts;
+	};
+	$get_content = function(&$art) {
+		$s = new Scrapper($art->link);
+		$art->content .= $s->node('...')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+*/
+
 $datas['ambito'] = function() {
 	$url = "http://www.ambito.com";
 	$data = new RSSMetadata("ambito", "Ambito Columnistas", $url);
@@ -452,6 +472,33 @@ $datas['laizquierdadiario'] = function() {
 		return $arts;
 	};
 	$get_content = function(&$art) {};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
+$datas['nuevaciudad'] = function() {
+	$url = 'http://nueva-ciudad.com.ar/';
+	$data = new RSSMetadata('nuevaciudad', 'Nueva Ciudad Columnistas', $url);
+	$data->encoding = $enc = "iso-8859-1";
+	$get_arts = function() use($url, $enc) {
+		$arts = array();
+		$s = new Scrapper($url, array('encoding' => $enc));
+		$authors = array('Casullo');
+		foreach($s->query('//section[@class="columnistas"]//a') as $a)
+			foreach($authors as $name)
+				if(strpos($s->node('.//span[@class="author"]', $a->node)->text(), $name) !== false) {
+					$link = 'http://nueva-ciudad.com.ar' . $a->attr('href');
+					$title = $s->node('.//h2', $a->node)->text();
+					$author = $s->node('.//span[@class="author"]', $a->node)->text();
+					$content = $s->node('.//p', $a->node)->text();
+					$arts[] = new Article($link, $title, $author, $content);
+				}
+		return $arts;
+	};
+	$get_content = function(&$art) use($enc) {
+		$s = new Scrapper($art->link, array('encoding' => $enc));
+		$art->content .= $s->node('//div[@class="description"]')->html();
+	};
 	$data->add_getter($get_arts, $get_content);
 	return $data;
 };
