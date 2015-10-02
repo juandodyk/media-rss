@@ -5,6 +5,17 @@ include_once('scrap.php');
 
 set_time_limit(60*5);
 
+function rss_getter($url) {
+	return function() use($url) {
+		$s = new scrapper($url, array('xml'));
+		return $s->extract_articles();
+	};
+}
+
+function set_rss_getter(&$data, $url) {
+	$data->get_links = rss_getter($url);
+}
+
 $datas = array();
 
 $datas['ambito'] = function() {
@@ -72,17 +83,6 @@ $datas['blanck'] = function() {
 	
 	return $data;
 };
-
-function rss_getter($url) {
-	return function() use($url) {
-		$s = new scrapper($url, array('xml'));
-		return $s->extract_articles();
-	};
-}
-
-function set_rss_getter(&$data, $url) {
-	$data->get_links = rss_getter($url);
-}
 
 function set_economist_getters(&$data, $url) {
 	set_rss_getter($data, $url);
@@ -435,6 +435,23 @@ $datas['pagina12'] = function() {
 		$art->content .= $s->node('//div[contains(@class, "foto_nota")]')->html();
 		$art->content .= $s->node('//div[@id="cuerpo"]')->html();
 	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
+$datas['laizquierdadiario'] = function() {
+	$url = 'http://www.laizquierdadiario.com/spip.php?page=backend';
+	$data = new RSSMetadata('laizquierdadiario', 'La Izquierda Diario Columnistas', $url);
+	$get_arts = function() use($url) {
+		$arts = array();
+		$s = new scrapper($url, array('xml'));
+		$authors = array('Rosso', 'Bach');
+		foreach($s->extract_articles() as $art)
+			foreach($authors as $name) if(strpos($art->author, $name) !== false)
+				$arts[] = $art;
+		return $arts;
+	};
+	$get_content = function(&$art) {};
 	$data->add_getter($get_arts, $get_content);
 	return $data;
 };
