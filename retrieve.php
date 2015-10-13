@@ -503,6 +503,31 @@ $datas['nuevaciudad'] = function() {
 	return $data;
 };
 
+$datas['tiempo'] = function() {
+	$url = 'http://tiempo.infonews.com/';
+	$data = new RSSMetadata('tiempo', 'Tiempo Columnistas', $url);
+	$get_arts = function() {
+		$arts = array();
+		$authors = array('432' => 'Claudio Mardones', '781' => 'Leandro Renou', '86' => 'Ana Vainman');
+		foreach($authors as $number => $author) {
+			$s = new Scrapper("http://www.infonews.com/autor/$number");
+			foreach($s->query('//div[@class="widget-open"]//div[@class="content-info"]//h2/a') as $a) {
+				$link = $a->attr('href');
+				$title = $a->text();
+				$arts[] = new Article($link, $title, $author);
+			}
+		}
+		return $arts;
+	};
+	$get_content = function(&$art) {
+		$s = new Scrapper($art->link);
+		$art->content .= $s->node('//div[@itemprop="description"]')->html();
+		$art->content .= $s->node('//div[@itemprop="articleBody"]')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
 $func = array();
 $cmd = array();
 
