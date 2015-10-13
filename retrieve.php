@@ -431,7 +431,7 @@ $datas['pagina12'] = function() {
 		$s = new Scrapper($url, array('encoding' => $enc));
 		$arts = array();
 		$authors = array('Pertot', 'Nepomuceno', 'Wainfeld', 'Verbitsky', 'Dellatorre',
-			             'Scaletta', 'Granovsky', 'Lukin', 'Abrevaya', 'Natanson');
+			             'Scaletta', 'Granovsky', 'Lukin', 'Abrevaya', 'Natanson', 'Cecchi');
 		$root = 'http://www.pagina12.com.ar';
 		foreach($s->query('//div[@id="bloque_escriben_hoy"]/ul/li/a') as $a)
 			foreach($authors as $name) if(strpos($a->text(), $name) !== false) {
@@ -568,7 +568,8 @@ $func['r'] = function($val) use($datas) {
 		$storage = new Storage($name);
 		if(!isset($_GET['link'])) {
 			echo "<h1>" . $datas[$name]()->title . "</h1>";
-			foreach($storage->last_articles() as $art)
+			$days = isset($_GET['days']) ? $_GET['days'] : 2;
+			foreach($storage->last_articles($days) as $art)
 				echo "<a href='retrieve.php?r=$name&link=" . urlencode($art->link) . "'>$art->title, by $art->author</a><br>";
 			continue;
 		}
