@@ -3,7 +3,11 @@
 
 <?php
 
+include_once('engine.php');
+include_once('scrap.php');
+
 date_default_timezone_set('America/Argentina/Buenos_Aires');
+set_time_limit(60*5);
 
 class Tapas {
 	
@@ -15,6 +19,19 @@ class Tapas {
 	
 	function days_before($days) {
 		$this->t -= $days*24*60*60;
+	}
+
+	function ejes() {
+		$ret = '';
+		$s = new Scrapper('http://portal.ejes.com/tapas-del-dia/', array('silence'));
+		$tapas = array('Naci&oacute;n', 'Herald', 'P&aacute;gina', 'Tiempo', 'El Pa&iacute;s', 'Clar&iacute;n', 'Cronista', 'Ambito', 'BAE', 'Perfil');
+		foreach($s->query('//ul[@class="tapitas"]//a') as $a)
+			foreach($tapas as $tapa) if(strpos($a->text(), $tapa) !== false) {
+				$t = new Scrapper($a->attr('href'), array('silence'));
+				foreach($t->query('//img') as $img)
+					$ret .= '<img src="' . $img->attr('src') . '" style="width:100%;"><br>';
+			}
+		return $ret;
 	}
 
 	function newseum($tapa) {
@@ -41,7 +58,7 @@ class Tapas {
 
 	function show() {
 		$tapas = array(
-			$this->newseum('ARG_DAF'),
+			/*$this->newseum('ARG_DAF'),
 			$this->dsd('05-EC'),
 			$this->kiosko('ar/ar_cronista'),
 			$this->dsd('13BAE'),
@@ -54,11 +71,12 @@ class Tapas {
 			$this->kiosko('ar/tiempo_argentino'),
 			$this->newseum('ARG_BAH'),
 			$this->kiosko('ar/ar_perfil'),
+			$this->newseum('SPA_PAIS'),*/
+			$this->ejes(),
 			$this->newseum('WSJ'),
+			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),
-			$this->newseum('SPA_PAIS'),
-			$this->newseum('NY_NYT'),
-			$this->newseum('DC_WP')
+			$this->newseum('NY_NYT')
 		);
 		
 		foreach($tapas as $tapa) {
