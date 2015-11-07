@@ -141,7 +141,7 @@ class ScrapperNode {
 class Scrapper {
 	public $html, $xpath, $enc;
 	
-	//$params is a subset of array('xml', 'google_cache', 'silence', 'encoding')
+	//$params is a subset of array('xml', 'google_cache', 'silence', 'encoding', 'clean_aside')
 	function __construct($url, $params = array()) {
 		$xml = in_array('xml', $params);
 		$gcache = in_array('google_cache', $params);
@@ -153,14 +153,16 @@ class Scrapper {
 		if(!$xml) @$this->html->loadhtml(htmlenc($source, $this->enc));
 		else @$this->html->loadxml($source);
 		$this->xpath = new DOMXpath($this->html);
-		$this->clean();
+		$this->clean(in_array('clean_aside', $params));
 		if(!in_array('silence', $params))
 			echo $url . " " . (microtime(true) - $pre_t) . "<br>\n";
 	}
 	
-	function clean() {
+	function clean($aside = false) {
 		$nodes = array();
 		foreach($this->html->getElementsByTagname('script') as $node)
+			$nodes[] = $node;
+		if($aside) foreach($this->html->getElementsByTagname('aside') as $node)
 			$nodes[] = $node;
 		foreach($nodes as $node)
 			$node->parentNode->removeChild($node);

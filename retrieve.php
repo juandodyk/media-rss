@@ -69,7 +69,8 @@ $datas['ambito'] = function() {
 		$epig = $s->node('//div[@id="epig"]')->html();
 		$content = $s->node('//div[@id="textoDespliegue"]')->html();
 		if(!$content) $art->saved = false;
-		$art->content = "Por $art->author<br><br>$volanta$copete$img$epig$content";
+		$content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $content);
+		$art->content = "Por $art->author<br><br>$volanta$copete$img$epig<p>$content</p>";
 	});
 	
 	return $data;
@@ -99,6 +100,7 @@ $datas['blanck'] = function() {
 		$art->content = '';
 		foreach($s->query('//div[@class="nota"]//p') as $p)
 			$art->content .= $p->html();
+		$art->content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $art->content);
 	});
 	
 	return $data;
@@ -163,7 +165,7 @@ $datas['lanacionwsj'] = function() {
 		return $arts;
 	};
 	$get_content = function(&$art) {
-		$s = new scrapper($art->link);
+		$s = new scrapper($art->link, array('clean_aside'));
 		$as = array();
 		foreach($s->query('//div[@class="columnista"]//a') as $a)
 			$as[] = $a->text();
@@ -190,7 +192,7 @@ $datas['lanacion'] = function() {
 		return $arts;
 	};};
 	$get_content = function(&$art) {
-		$s = new scrapper($art->link);
+		$s = new scrapper($art->link, array('clean_aside'));
 		$as = array();
 		foreach($s->query('//a[@itemprop="author"]') as $a)
 			$as[] = $a->text();
@@ -275,6 +277,7 @@ $datas['cronistaft'] = function() {
 		$s = new scrapper($art->link);
 		$art->content = $s->node('//div[@class="bajada"]')->html();
 		$art->content .= $s->node('//div[@itemprop="articleBody"]')->html();
+		$art->content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $art->content);
 	});
 	return $data;
 };
