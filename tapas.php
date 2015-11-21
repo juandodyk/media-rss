@@ -24,7 +24,8 @@ class Tapas {
 	function ejes() {
 		$ret = '';
 		$s = new Scrapper('http://portal.ejes.com/tapas-del-dia/', array('silence'));
-		$tapas = array('Naci&oacute;n', 'Herald', 'P&aacute;gina', 'Tiempo', 'El Pa&iacute;s', 'Clar&iacute;n', 'Cronista', 'Ambito', 'BAE', 'Perfil');
+		$tapas = array('Naci&oacute;n', 'Herald', 'P&aacute;gina', 'Tiempo', 'El Pa&iacute;s',
+			           'Clar&iacute;n', 'Cronista', 'Ambito', 'BAE', 'Perfil', 'Economista', 'Estadista');
 		foreach($s->query('//ul[@class="tapitas"]//a') as $a)
 			foreach($tapas as $tapa) if(strpos($a->text(), $tapa) !== false) {
 				$t = new Scrapper($a->attr('href'), array('silence'));
@@ -73,6 +74,7 @@ class Tapas {
 			$this->kiosko('ar/ar_perfil'),
 			$this->newseum('SPA_PAIS'),*/
 			$this->ejes(),
+			$this->newseum('PAR_UH'),
 			$this->newseum('WSJ'),
 			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),
