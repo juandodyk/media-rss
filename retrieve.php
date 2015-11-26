@@ -202,7 +202,8 @@ $datas['lanacion'] = function() {
 	$authors = array("eduardo-fidanza-614", "carlos-pagni-81", "francisco-olivera-179",
 		             "gabriel-sued-165", "jaime-rosemberg-163", "lucrecia-bullrich-3",
 		             "eduardo-levy-yeyati-319", "francisco-jueguen-12", "hugo-alconada-mon-97",
-		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120");
+		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120",
+		             "florencia-donovan-175", "andres-malamud-5974");
 	foreach($authors as $author)
 		$data->add_getter($get_arts_by($author), $get_content);
 	return $data;
@@ -434,7 +435,7 @@ $datas['pagina12'] = function() {
 		$s = new Scrapper($url, array('encoding' => $enc));
 		$arts = array();
 		$authors = array('Pertot', 'Nepomuceno', 'Wainfeld', 'Verbitsky', 'Dellatorre',
-			             'Scaletta', 'Granovsky', 'Lukin', 'Abrevaya', 'Natanson', 'Cecchi');
+			             'Scaletta', 'Lukin', 'Abrevaya', 'Natanson', 'Cecchi', 'Zizek');
 		$root = 'http://www.pagina12.com.ar';
 		foreach($s->query('//div[@id="bloque_escriben_hoy"]/ul/li/a') as $a)
 			foreach($authors as $name) if(strpos($a->text(), $name) !== false) {
@@ -529,6 +530,33 @@ $datas['tiempo'] = function() {
 		$art->content .= $s->node('//div[@itemprop="articleBody"]')->html();
 	};
 	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
+$datas['bastion'] = function() {
+	$url = 'http://ar.bastiondigital.com/';
+	$data = new RSSMetadata('bastion', 'Bastion Digital', $url);
+	$get_arts = function($url) { return function() use($url) {
+		$s = new Scrapper($url);
+		$arts = array();
+		foreach($s->query('//article') as $art) {
+			$link = 'http://ar.bastiondigital.com' . $s->node('.//h2/a', $art->node)->attr('href');
+			$title = $s->node('.//h2/a', $art->node)->text();
+			$authors = array();
+			foreach ($s->query('.//div[@class="teaser-autor"]/a', $art->node) as $div) if($div->text())
+				$authors[] = $div->text();
+			$author = implode(", ", $authors);
+			$content = $s->node('.//div[contains(@class, "content")]', $art->node)->html();
+			$arts[] = new Article($link, $title, $author, $content);
+		}
+		return $arts;
+	};};
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content .= $s->node('//div[contains(@class, "field-name-body")]')->html();
+	};
+	$data->add_getter($get_arts($url."tipos-de-nota/dicen-en-bastion"), $get_content);
+	$data->add_getter($get_arts($url."curaduria"), $get_content);
 	return $data;
 };
 
