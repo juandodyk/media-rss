@@ -8,11 +8,11 @@ Corro esto en un hosting con php y mysql gratuito. Los rss se generan al llamar 
 
 Ejemplos:
 
-* [Anfibia](http://pterosaurio.xp3.biz/media/rss/anfibia.rss)
-* [Columnistas de Ámbito Financiero](http://pterosaurio.xp3.biz/media/rss/ambito.rss)
-* [Monkey Cage](http://pterosaurio.xp3.biz/media/rss/monkeycage.rss) del [Washington Post](www.washingtonpost.com/blogs/monkey-cage/) bien formateado.
-* El blog [Free Exchange](http://pterosaurio.xp3.biz/media/rss/econfreeexchange.rss) de The Economist.
-* Las columnas de [@mecasullo](twitter.com/mecasullo) en [Nueva Ciudad](http://pterosaurio.xp3.biz/media/rss/nuevaciudad.rss).
+* [Anfibia](https://feedly.com/i/subscription/feed/http://pterosaurio.xp3.biz/media/rss/anfibia.rss)
+* [Columnistas de Ámbito Financiero](https://feedly.com/i/subscription/feed/http://pterosaurio.xp3.biz/media/rss/ambito.rss)
+* [Monkey Cage](https://feedly.com/i/subscription/feed/http://pterosaurio.xp3.biz/media/rss/monkeycage.rss) del [Washington Post](http://www.washingtonpost.com/blogs/monkey-cage/) bien formateado.
+* El blog [Free Exchange](https://feedly.com/i/subscription/feed/http://pterosaurio.xp3.biz/media/rss/econfreeexchange.rss) de The Economist.
+* Las columnas de [@mecasullo](twitter.com/mecasullo) en [Nueva Ciudad](https://feedly.com/i/subscription/feed/http://pterosaurio.xp3.biz/media/rss/nuevaciudad.rss).
 
 ## Miro las tapas de ciertos diarios
 
