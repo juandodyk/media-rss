@@ -513,7 +513,7 @@ $datas['tiempo'] = function() {
 	$get_arts = function() {
 		$arts = array();
 		$authors = array('432' => 'Claudio Mardones', '781' => 'Leandro Renou', '86' => 'Ana Vainman',
-			             '696' => 'Antolin Magallanes', '828' => 'Ari Lijalad');
+			             '696' => 'Antolin Magallanes', '828' => 'Ari Lijalad', '1755' => 'Diego Genoud');
 		foreach($authors as $number => $author) {
 			$s = new Scrapper("http://www.infonews.com/autor/$number");
 			foreach($s->query('//div[@class="widget-open"]//div[@class="content-info"]//h2/a') as $a) {

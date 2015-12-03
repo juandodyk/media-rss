@@ -75,6 +75,7 @@ class Tapas {
 			$this->newseum('SPA_PAIS'),*/
 			$this->ejes(),
 			$this->newseum('PAR_UH'),
+			$this->kiosko('py/abccolor'),
 			$this->newseum('WSJ'),
 			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),
