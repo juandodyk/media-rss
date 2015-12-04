@@ -57,6 +57,17 @@ class Tapas {
 		return '<img src="' . $url . '" style="width:100%;"><br>';
 	}
 
+	function py_5dias() {
+		$url = 'http://www.5dias.com.py/tapas/';
+		$s = new Scrapper($url, array('silence'));
+		foreach ($s->query('//div[@class="panel-content"]//div[@class="column3"]') as $div) {
+			$fecha = $s->node('.//h3', $div->node)->text();
+			if(!starts_with($fecha, date("d", $this->t))) continue;
+			$img = $s->node('.//img', $div->node)->attr('src');
+			return '<img src="' . $img . '" style="width:100%;"><br>';
+		}
+	}
+
 	function show() {
 		$tapas = array(
 			/*$this->newseum('ARG_DAF'),
@@ -76,6 +87,7 @@ class Tapas {
 			$this->ejes(),
 			$this->newseum('PAR_UH'),
 			$this->kiosko('py/abccolor'),
+			$this->py_5dias(),
 			$this->newseum('WSJ'),
 			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),

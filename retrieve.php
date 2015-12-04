@@ -106,17 +106,19 @@ $datas['blanck'] = function() {
 	return $data;
 };
 
+$economist_get_content = function(&$art) {
+	$s = new scrapper($art->link, array('clean_aside'));
+	$main = $s->node('//div[@class="main-content"]')->html();
+	if($main) { $art->content = $main; return; }
+	$s = new scrapper($url, array('google_cache'));
+	$main = $s->node('//div[@class="main-content"]')->html();
+	if($main) { $art->content = "USED GOOGLE CACHE<br><br>$main"; return; }
+	$art->saved = false;
+};
+
 function set_economist_getters(&$data, $url) {
 	set_rss_getter($data, $url);
-	$data->set_get_content(function(&$art) {
-		$s = new scrapper($art->link);
-		$main = $s->node('//div[@class="main-content"]')->html();
-		if($main) { $art->content = $main; return; }
-		$s = new scrapper($url, array('google_cache'));
-		$main = $s->node('//div[@class="main-content"]')->html();
-		if($main) { $art->content = "USED GOOGLE CACHE<br><br>$main"; return; }
-		$art->saved = false;
-	});
+	$data->set_get_content($economist_get_content);
 }
 
 $datas['econexplains'] = function() {
@@ -137,6 +139,23 @@ $datas['econfreeexchange'] = function() {
 	$url = "http://www.economist.com/blogs/freeexchange/index.xml";
 	$data = new RSSMetadata("econfreeexchange", "Free exchange", $url);
 	set_economist_getters($data, $url);
+	return $data;
+};
+
+$datas['econpoliticsweek'] = function() use($economist_get_content) {
+	$url = "http://www.economist.com/printedition";
+	$data = new RSSMetadata("econpoliticsweek", "The Economist - Politics this week", $url);
+	$get_arts = function() use($url) {
+		$s = new scrapper($url);
+		$arts = array();
+		foreach($s->query('//div[@class="article"]/a') as $a) if($a->text() == "Politics this week") {
+			$link = "http://www.economist.com". $a->attr('href');
+			$title = $a->text();
+			$arts[] = new Article($link, $title);
+		}
+		return $arts;
+	};
+	$data->add_getter($get_arts, $economist_get_content);
 	return $data;
 };
 
