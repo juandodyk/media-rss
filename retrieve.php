@@ -222,7 +222,7 @@ $datas['lanacion'] = function() {
 		             "gabriel-sued-165", "jaime-rosemberg-163", "lucrecia-bullrich-3",
 		             "eduardo-levy-yeyati-319", "francisco-jueguen-12", "hugo-alconada-mon-97",
 		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120",
-		             "florencia-donovan-175", "andres-malamud-5974");
+		             "florencia-donovan-175", "andres-malamud-5974", "juan-gabriel-tokatlian-756");
 	foreach($authors as $author)
 		$data->add_getter($get_arts_by($author), $get_content);
 	return $data;
@@ -454,7 +454,7 @@ $datas['pagina12'] = function() {
 		$s = new Scrapper($url, array('encoding' => $enc));
 		$arts = array();
 		$authors = array('Pertot', 'Nepomuceno', 'Wainfeld', 'Verbitsky', 'Dellatorre',
-			             'Scaletta', 'Lukin', 'Abrevaya', 'Natanson', 'Cecchi', 'Zizek');
+			             'Scaletta', 'Lukin', 'Abrevaya', 'Natanson', 'Cecchi', 'Zizek', 'Torres Cabreros');
 		$root = 'http://www.pagina12.com.ar';
 		foreach($s->query('//div[@id="bloque_escriben_hoy"]/ul/li/a') as $a)
 			foreach($authors as $name) if(strpos($a->text(), $name) !== false) {
@@ -521,6 +521,7 @@ $datas['nuevaciudad'] = function() {
 	$get_content = function(&$art) use($enc) {
 		$s = new Scrapper($art->link, array('encoding' => $enc));
 		$art->content .= $s->node('//div[@class="description"]')->html();
+		$art->content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $art->content);
 	};
 	$data->add_getter($get_arts, $get_content);
 	return $data;
@@ -576,6 +577,21 @@ $datas['bastion'] = function() {
 	};
 	$data->add_getter($get_arts($url."tipos-de-nota/dicen-en-bastion"), $get_content);
 	$data->add_getter($get_arts($url."curaduria"), $get_content);
+	return $data;
+};
+
+$datas['panama'] = function() {
+	$url = "http://panamarevista.com/feed/";
+	$data = new RSSMetadata("panama", "Panama Revista", $url);
+	set_rss_getter($data, $url);
+	$data->set_get_content(function(&$art) {
+		$s = new scrapper($art->link);
+		$art->author = $s->node('//span[@class="nombre"]')->text();
+		$art->content = $s->node('//div[@class="autor"]')->html();
+		foreach($s->query('//div[@class="post-entry"]/p') as $p)
+			$art->content .= $p->html();
+		$art->content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $art->content);
+	});
 	return $data;
 };
 
@@ -643,10 +659,11 @@ $func['r'] = function($val) use($datas) {
 	foreach(explode(',', $val) as $name) if(isset($datas[$name])) {
 		$storage = new Storage($name);
 		if(!isset($_GET['link'])) {
-			echo "<h1>" . $datas[$name]()->title . "</h1>";
+			echo "<div style='margin:auto;width:700px;'><h1>" . $datas[$name]()->title . "</h1>";
 			$days = isset($_GET['days']) ? $_GET['days'] : 2;
 			foreach($storage->last_articles($days) as $art)
 				echo "<a href='retrieve.php?r=$name&link=" . urlencode($art->link) . "'>$art->title, by $art->author</a><br>";
+			echo "</div>";
 			continue;
 		}
 		$link = urldecode($_GET['link']);
@@ -654,8 +671,8 @@ $func['r'] = function($val) use($datas) {
 		$storage->fetch_articles($arts);
 		$art = $arts[$link];
 		echo "<html><head><title>$art->title</title></head>";
-		echo "<body><h1>$art->title</h1><p>Por $art->author. <a href='$link'>Link</a> <a href='retrieve.php?r=$name'>Volver</a></p>";
-		echo "$art->content</body></html>";
+		echo "<body><div style='margin:auto;width:700px;'><h1>$art->title</h1><p>Por $art->author. <a href='$link'>Link</a> <a href='retrieve.php?r=$name'>Volver</a></p>";
+		echo "$art->content</div></body></html>";
 	}
 };
 
