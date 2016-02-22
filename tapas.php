@@ -68,6 +68,20 @@ class Tapas {
 		}
 	}
 
+	function py_lanacion() {
+		$y = date("Y", $this->t);
+		$m = date("m", $this->t);
+		$d = date("d", $this->t);
+		$url = 'http://www.lanacion.com.py/category/tapa/';
+		$s = new Scrapper($url, array('silence'));
+		foreach ($s->query('//article/div[@class="thumbnail"]/a') as $a)
+			if(strpos($a->attr('href'), "$y/$m/$d") !== false) {
+				$s = new Scrapper($a->attr('href'), array('silence'));
+				$img = $s->node('//div[@class="entry-content"]//a')->attr('href');
+				return '<img src="' . $img . '" style="width:100%;"><br>';
+			}
+	}
+
 	function show() {
 		$tapas = array(
 			/*$this->newseum('ARG_DAF'),
@@ -88,6 +102,7 @@ class Tapas {
 			$this->newseum('PAR_UH'),
 			$this->kiosko('py/abccolor'),
 			$this->py_5dias(),
+			$this->py_lanacion(),
 			$this->newseum('WSJ'),
 			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),

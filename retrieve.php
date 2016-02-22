@@ -4,6 +4,7 @@ include_once('engine.php');
 include_once('scrap.php');
 
 set_time_limit(60*5);
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 function rss_getter($url) {
 	return function() use($url) {
@@ -116,29 +117,29 @@ $economist_get_content = function(&$art) {
 	$art->saved = false;
 };
 
-function set_economist_getters(&$data, $url) {
+function set_economist_getters(&$data, $url, $getter) {
 	set_rss_getter($data, $url);
-	$data->set_get_content($economist_get_content);
+	$data->set_get_content($getter);
 }
 
-$datas['econexplains'] = function() {
+$datas['econexplains'] = function() use($economist_get_content) {
 	$url = "http://www.economist.com/blogs/economist-explains/index.xml";
 	$data = new RSSMetadata("econexplains", "The Economist explains", $url);
-	set_economist_getters($data, $url);
+	set_economist_getters($data, $url, $economist_get_content);
 	return $data;
 };
 
-$datas['econbuttonwood'] = function() {
+$datas['econbuttonwood'] = function() use($economist_get_content) {
 	$url = "http://www.economist.com/blogs/buttonwood/index.xml";
 	$data = new RSSMetadata("econbuttonwood", "Buttonwood's notebook", $url);
-	set_economist_getters($data, $url);
+	set_economist_getters($data, $url, $economist_get_content);
 	return $data;
 };
 
-$datas['econfreeexchange'] = function() {
+$datas['econfreeexchange'] = function() use($economist_get_content) {
 	$url = "http://www.economist.com/blogs/freeexchange/index.xml";
 	$data = new RSSMetadata("econfreeexchange", "Free exchange", $url);
-	set_economist_getters($data, $url);
+	set_economist_getters($data, $url, $economist_get_content);
 	return $data;
 };
 
@@ -148,11 +149,12 @@ $datas['econpoliticsweek'] = function() use($economist_get_content) {
 	$get_arts = function() use($url) {
 		$s = new scrapper($url);
 		$arts = array();
-		foreach($s->query('//div[@class="article"]/a') as $a) if($a->text() == "Politics this week") {
-			$link = "http://www.economist.com". $a->attr('href');
-			$title = $a->text();
-			$arts[] = new Article($link, $title);
-		}
+		foreach($s->query('//div[@class="article"]/a') as $a)
+			if($a->text() == "Politics this week" || $a->text() == "The world this week") {
+				$link = "http://www.economist.com". $a->attr('href');
+				$title = $a->text();
+				$arts[] = new Article($link, $title);
+			}
 		return $arts;
 	};
 	$data->add_getter($get_arts, $economist_get_content);
@@ -201,7 +203,9 @@ $datas['lanacion'] = function() {
 	$get_arts_by = function($author) { return function() use($author) {
 		$s = new Scrapper("http://www.lanacion.com.ar/autor/$author");
 		$arts = array();
+		$it = 0;
 		foreach($s->query('//article/h2/a') as $a) {
+			if($it++ > 5) break;
 			$link = $a->attr('href');
 			if(starts_with($link, "http")) continue;
 			$link = "http://www.lanacion.com.ar" . $link;
@@ -222,7 +226,9 @@ $datas['lanacion'] = function() {
 		             "gabriel-sued-165", "jaime-rosemberg-163", "lucrecia-bullrich-3",
 		             "eduardo-levy-yeyati-319", "francisco-jueguen-12", "hugo-alconada-mon-97",
 		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120",
-		             "florencia-donovan-175", "andres-malamud-5974", "juan-gabriel-tokatlian-756");
+		             "florencia-donovan-175", "andres-malamud-5974", "juan-gabriel-tokatlian-756",
+		             "federico-merke-4764", "nicolas-dujovne-706", "marcelo-leiras-1719",
+		             "martin-kanenguiser-177", "jose-del-rio-6753");
 	foreach($authors as $author)
 		$data->add_getter($get_arts_by($author), $get_content);
 	return $data;
@@ -254,16 +260,21 @@ $datas['agenciatss'] = function() {
 $datas['paulkrugman'] = function() {
 	$url = "http://krugman.blogs.nytimes.com/feed/";
 	$data = new RSSMetadata("paulkrugman", "Paul Krugman", $url);
-	set_rss_getter($data, $url);
-	$data->set_get_content(function(&$art) {
-		$s = new scrapper($art->link, array('google_cache'));
-		$content = '';
-		foreach($s->query('//div[@class="entry-content"]/*') as $p)
-			if($p->attr('id') != "sharetools-story")
-				$content .= $p->html();
-		$art->content .= $content;
-		if(!$content) $art->saved = false;
-	});
+	$get_content = function(&$art) {
+		$get = function(&$s) {
+			$content = '';
+			foreach($s->query('//div[@class="entry-content" or @class="story-body"]/*') as $p)
+				if(strpos($p->attr('id'), "sharetools") === false)
+					$content .= $p->html();
+			return $content;
+		};
+		$content = $get(new scrapper($art->link));
+		if($content) { $art->content = $main; return; }
+		$content = $get(new scrapper($art->link, array('google_cache')));
+		if($content) { $art->content = "USED GOOGLE CACHE<br><br>$content"; return; }
+		$art->saved = false;
+	};
+	$data->add_getter(rss_getter($url), $get_content);
 	return $data;
 };
 
@@ -592,6 +603,62 @@ $datas['panama'] = function() {
 			$art->content .= $p->html();
 		$art->content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $art->content);
 	});
+	return $data;
+};
+
+$datas['perfil'] = function() {
+	$url = "http://www.perfil.com";
+	$data = new RSSMetadata("perfil", "Perfil Columnistas", $url);
+	$get_arts = function() use($url) {
+		$arts = array();
+		$authors = array('Fidanza', 'Delfino', 'Ayerdi', 'DerGhougassian', 'Luciano Cohan', 'Bilotta', 'Sarlo');
+		foreach($authors as $nombre) {
+			$t = time() - 7*24*60*60; $y = date("Y", $t); $m = date("m", $t); $d = date("d", $t); $t1 = "$d/$m/$y";
+			$t = time(); $y = date("Y", $t); $m = date("m", $t); $d = date("d", $t); $t2 = "$d/$m/$y";
+			$s = new Scrapper("$url/resultados.html", array('post' => array('search' => $nombre, 'desde' => $t1, 'hasta' => $t2)));
+			$primero = true;
+			foreach($s->query('//*[@id="seccion-arriba"]/article//a') as $a) {
+				$link = $url . $a->attr('href');
+				$title = $a->text();
+				$t = new Scrapper($link);
+				$author = $t->node('//li[@class="autor"]')->text();
+				if(strpos($author, $nombre) !== false) {
+					$content = $t->node('//*[@id="header-noticia"]/h3')->html();
+					$content .= $t->node('//figure[@id="foto"]')->html();
+					$content .= $t->node('//div[@itemprop="articleBody"]')->html();
+					$content = preg_replace('#(?:<br\s*/?>\s*?)+#', '</p><p>', $content);
+					$content = preg_replace('#src="/#', 'src="'.$url.'/', $content);
+					$content = preg_replace('#href="/#', 'href="'.$url.'/', $content);
+					$arts[] = new Article($link, $title, $author, $content);
+				}
+			}
+		}
+		return $arts;
+	};
+	$get_content = function(&$art) { return $art; };
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
+$datas['ultimahora'] = function() {
+	$url = "http://www.ultimahora.com";
+	$data = new RSSMetadata("ultimahora", "Ultima Hora Columnistas", $url);
+	$get_arts = function() use($url) {
+		$arts = array();
+		$s = new Scrapper("$url/contenidos/resultado.html?text=Alfredo+Boccia+Paz");
+		foreach($s->query('//div[@class="result-obj"]//h3/a') as $a) {
+			$link = $a->attr('href');
+			$title = $a->text();
+			$arts[] = new Article($link, $title, "Alfredo Boccia Paz");
+		}
+		return $arts;
+	};
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content .= $s->node('//section[contains(@class, "note-body")]')->html();
+		$art->content .= $s->node('//div[contains(@class, "news-detail-obj")]')->html();		
+	};
+	$data->add_getter($get_arts, $get_content);
 	return $data;
 };
 

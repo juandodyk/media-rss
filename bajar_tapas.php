@@ -50,6 +50,10 @@ class Tapas {
 		$this->t = time();
 	}
 
+	function days_before($days) {
+		$this->t -= $days*24*60*60;
+	}
+
 	function ejes() {
 		$ret = array();
 		$s = new Scrapper(file_get_contents('http://portal.ejes.com/tapas-del-dia/'));
@@ -81,9 +85,11 @@ class Tapas {
 		if (!file_exists($dir))
 		    mkdir($dir, 0777, true);
 		foreach ($diarios as $diario => $url) {
+			echo "$diario... ";
 			$ext = endsWith($url, 'pdf') ? 'pdf' : 'jpg';
 			@$f = fopen($url, 'r');
 			if($f) file_put_contents("$dir/$diario.$ext", $f);
+			echo "done<br>";
 		}
 	}
 
@@ -98,6 +104,7 @@ class Tapas {
 }
 
 $tapas = new tapas();
+if(isset($_GET['d'])) $tapas->days_before($_GET['d']);
 $tapas->download();
 
 ?>

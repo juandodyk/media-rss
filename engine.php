@@ -129,6 +129,14 @@ function htmlenc($s, $enc = null) {
 function google_cache($url) {
 	return 'http://webcache.googleusercontent.com/search?q=cache:' . urlencode(str_before($url, '?'));
 }
+function post_context($post) {
+	return stream_context_create(array(
+		'http' => array(
+			'method'  => 'POST',
+			'content' => http_build_query($post)
+		)
+	));
+}
 
 class ScrapperNode {
 	public $node, $html;
@@ -141,13 +149,14 @@ class ScrapperNode {
 class Scrapper {
 	public $html, $xpath, $enc;
 	
-	//$params is a subset of array('xml', 'google_cache', 'silence', 'encoding', 'clean_aside')
+	//$params is a subset of array('xml', 'google_cache', 'silence', 'encoding', 'clean_aside', 'post')
 	function __construct($url, $params = array()) {
 		$xml = in_array('xml', $params);
 		$gcache = in_array('google_cache', $params);
 		if($gcache) $url = google_cache($url);
 		$pre_t = microtime(true);
-		$source = file_get_contents($url);
+		$ctx = isset($params['post']) ? post_context($params['post']) : NULL;
+		$source = @file_get_contents($url, false, $ctx);
 		$this->html = new DOMDocument();
 		$this->enc = isset($params['encoding']) ? $params['encoding'] : 'utf-8';
 		if(!$xml) @$this->html->loadhtml(htmlenc($source, $this->enc));
