@@ -645,11 +645,14 @@ $datas['ultimahora'] = function() {
 	$data = new RSSMetadata("ultimahora", "Ultima Hora Columnistas", $url);
 	$get_arts = function() use($url) {
 		$arts = array();
-		$s = new Scrapper("$url/contenidos/resultado.html?text=Alfredo+Boccia+Paz");
-		foreach($s->query('//div[@class="result-obj"]//h3/a') as $a) {
-			$link = $a->attr('href');
-			$title = $a->text();
-			$arts[] = new Article($link, $title, "Alfredo Boccia Paz");
+		$authors = array("Alfredo Boccia Paz", "Estela Ruiz Díaz", "Andrés Colmán Gutiérrez");
+		foreach($authors as $nombre) {
+			$s = new Scrapper("$url/contenidos/resultado.html?text=".str_replace(" ","+",$nombre));
+			foreach($s->query('//div[@class="result-obj"]//h3/a') as $a) {
+				$link = $a->attr('href');
+				$title = $a->text();
+				$arts[] = new Article($link, $title, $nombre);
+			}
 		}
 		return $arts;
 	};

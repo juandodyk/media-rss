@@ -82,6 +82,15 @@ class Tapas {
 			}
 	}
 
+	function py_cva() {
+		$ret = '';
+		$ret .= '<img src="' . 'http://py.cvamedios.com/images/uh.jpg' . '" style="width:100%;"><br>';
+		$ret .= '<img src="' . 'http://py.cvamedios.com/images/abc.jpg' . '" style="width:100%;"><br>';
+		$ret .= '<img src="' . 'http://py.cvamedios.com/images/5dias.jpg' . '" style="width:100%;"><br>';
+		$ret .= '<img src="' . 'http://py.cvamedios.com/images/lnpy.jpg' . '" style="width:100%;"><br>';
+		return $ret;
+	}
+
 	function show() {
 		$tapas = array(
 			/*$this->newseum('ARG_DAF'),
@@ -99,10 +108,11 @@ class Tapas {
 			$this->kiosko('ar/ar_perfil'),
 			$this->newseum('SPA_PAIS'),*/
 			$this->ejes(),
-			$this->newseum('PAR_UH'),
-			$this->kiosko('py/abccolor'),
-			$this->py_5dias(),
-			$this->py_lanacion(),
+			$this->py_cva(),
+			//$this->newseum('PAR_UH'),
+			//$this->kiosko('py/abccolor'),
+			//$this->py_5dias(),
+			//$this->py_lanacion(),
 			$this->newseum('WSJ'),
 			$this->newseum('DC_WP'),
 			$this->kiosko('uk/ft_uk'),
