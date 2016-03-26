@@ -56,7 +56,10 @@ $datas['ambito'] = function() {
 			$title = $node->text();
 			$author = $s->node('./h5', $div->node)->text();
 			$arts[$link] = new Article($link, $title, $author);
-		}		
+		}
+		$s = new Scrapper("$url/noticias/buscar.asp?clave=Lo%20que%20se%20dice%20en%20las%20mesas");
+		$link = $url . $s->node('//p[@class="nota"]/a')->attr('href');
+		$arts[$link] = new Article($link, "Lo que se dice en las mesas");
 		return $arts;
 	};
 
