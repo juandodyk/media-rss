@@ -668,6 +668,24 @@ $datas['ultimahora'] = function() {
 	return $data;
 };
 
+$datas['levitsky'] = function() {
+	$url = "http://larepublica.pe/persona/steven-levitsky";
+	$data = new RSSMetadata("levitsky", "Steven Levitsky en La República", $url);
+	$get_arts = function() use($url) {
+		$arts = array();
+		$s = new Scrapper($url);
+		$a = $s->node('//a[@class="atm-title"]');
+		$arts[] = new Article("http://larepublica.pe".$a->attr('href'), $a->text(), "Steven Levitsky");
+		return $arts;
+	};
+	$get_content = function(&$art) {
+		$s = new scrapper($art->link);
+		$art->content = $s->node('//div[@id="note-body"]')->html();
+	};
+	$data->add_getter($get_arts, $get_content);
+	return $data;
+};
+
 $func = array();
 $cmd = array();
 
