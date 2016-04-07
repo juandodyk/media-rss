@@ -351,24 +351,26 @@ $datas['bloombergview'] = function() {
 	$data = new RSSMetadata("bloombergview", "Bloomberg View", "http://www.bloombergview.com/");
 	$get_content = function(&$art) {
 		$s = new scrapper($art->link);
+		$art->title = $s->node('//meta[@property="og:title"]')->attr('content');
+		$author = $s->node('//div[@class=" byline"]/a')->text();
+		if($author) $art->author = $author;
 		$art->content .= $s->node('//div[@class="quicktake_header"]/img')->html();
 		$art->content .= $s->node('//img[@itemprop="image"]')->html();
 		$art->content .= $s->node('//div[@class="quicktake_introduction"]')->html();
 		$art->content .= $s->node('//div[@itemprop="articleBody"]')->html();
+		$art->content .= $s->node('//div[@id="content"]//img')->html();
+		$art->content .= $s->node('//article/div[2]')->html();
 	};
 	$get_arts = function($url, $author_='') { return function() use($url, $author_) {
 		$arts = array();
 		$s = new scrapper($url);
-		foreach($s->query('//article/div[1]') as $div) {
-			$a = $s->node('a', $div->node);
+		$i = 0;
+		foreach($s->query('//article') as $article) {
+			if(++$i>5) break;
+			$a = $s->node('.//a', $article->node);
 			$link = $a->attr('href'); $link = starts_with($link, '/') ? str_from($link, '/') : $link;
 			$link = "http://www.bloombergview.com/" . $link;
-			$title = $s->node('div[1]', $a->node)->text();
-			if(!$title) $title = $a->text();
-			$content = $s->node('div[2]', $a->node)->text();
-			$author = $s->node('div[1]/span/a', $div->node)->text();
-			$author = $author ? $author : $author_;
-			$arts[] = new Article($link, $title, $author, $content);
+			$arts[] = new Article($link, '', $author_);
 		}
 		return $arts;
 	}; };
