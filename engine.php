@@ -78,7 +78,7 @@ class RSSEngine {
 			if($art->tms >= time() - $data->days_in_rss*24*60*60)
 				$this->rss_add_item($art);
 		$this->rss_close();
-		$this->file_save("rss/$data->rss_name.rss", $this->rss);
+		$this->file_save(dirname(__FILE__) . "/rss/$data->rss_name.rss", $this->rss);
 		$this->storage->clean_old($data->days_before_cleanup);
 		echo "<br>Elapsed " . (microtime(true) - $pre_t) . "<br><br>\n\n";
 	}
@@ -196,8 +196,8 @@ class Scrapper {
 		return $nodes;
 	}
 	
-	function extract_articles() {
-		$arts = array();
+	function extract_articles($max_items=100) {
+		$arts = array(); $count = 1;
 		foreach($this->_query('//item') as $item) {
 			$link = $this->node('link', $item)->text();
 			$title = $this->node('title', $item)->text();
@@ -206,8 +206,16 @@ class Scrapper {
 			$description = $this->node('description', $item)->text();
 			@$content = $this->node('content:encoded', $item)->text();
 			$arts[$link] = new Article($link, $title, $author, $description.$content);
+			if($count++ >= $max_items) break;
 		}
 		return $arts;
+	}
+}
+
+class FiveFiltersContent {
+	function get_content($url) {
+		$s = new Scrapper("http://ftr.fivefilters.org/makefulltextfeed.php?url=" . urlencode($url), array('xml'));
+		return $s->node('//item/description')->text();
 	}
 }
 

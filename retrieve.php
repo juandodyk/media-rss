@@ -6,16 +6,21 @@ include_once('scrap.php');
 set_time_limit(60*5);
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 
-function rss_getter($url) {
-	return function() use($url) {
+function rss_getter($url, $max_arts=100) {
+	return function() use($url, $max_arts) {
 		$s = new scrapper($url, array('xml'));
-		return $s->extract_articles();
+		return $s->extract_articles($max_arts);
 	};
 }
 
 function set_rss_getter(&$data, $url) {
 	$data->get_links = rss_getter($url);
 }
+
+$ffc = new FiveFiltersContent();
+$ff_get_content = function(&$art) use($ffc) {
+	$art->content .= $ffc->get_content($art->link);
+};
 
 $datas = array();
 
@@ -153,7 +158,7 @@ $datas['econpoliticsweek'] = function() use($economist_get_content) {
 		$s = new scrapper($url);
 		$arts = array();
 		foreach($s->query('//div[@class="article"]/a') as $a)
-			if($a->text() == "Politics this week" || $a->text() == "The world this week") {
+			if($a->text() == "Politics this week" || $a->text() == "The world this week" || $a->text() == "Politics") {
 				$link = "http://www.economist.com". $a->attr('href');
 				$title = $a->text();
 				$arts[] = new Article($link, $title);
@@ -208,7 +213,7 @@ $datas['lanacion'] = function() {
 		$arts = array();
 		$it = 0;
 		foreach($s->query('//article/h2/a') as $a) {
-			if($it++ > 5) break;
+			if($it++ > 3) break;
 			$link = $a->attr('href');
 			if(starts_with($link, "http")) continue;
 			$link = "http://www.lanacion.com.ar" . $link;
@@ -231,7 +236,9 @@ $datas['lanacion'] = function() {
 		             "nicolas-balinotti-152", "pablo-fernandez-blanco-3110", "silvia-pisani-120",
 		             "florencia-donovan-175", "andres-malamud-5974", "juan-gabriel-tokatlian-756",
 		             "federico-merke-4764", "nicolas-dujovne-706", "marcelo-leiras-1719",
-		             "martin-kanenguiser-177", "jose-del-rio-6753");
+		             "martin-kanenguiser-177", "jose-del-rio-6753", "alberto-armendariz-119",
+		             "javier-blanco-170", "fernando-bertello-228", "martin-dinatale-11",
+		             "sabrina-corujo-1791", "raquel-san-martin-151", "alejandro-rebossio-181");
 	foreach($authors as $author)
 		$data->add_getter($get_arts_by($author), $get_content);
 	return $data;
@@ -260,10 +267,10 @@ $datas['agenciatss'] = function() {
 	return $data;
 };
 
-$datas['paulkrugman'] = function() {
+$datas['paulkrugman'] = function() use($ff_get_content) {
 	$url = "http://krugman.blogs.nytimes.com/feed/";
 	$data = new RSSMetadata("paulkrugman", "Paul Krugman", $url);
-	$get_content = function(&$art) {
+	/*$get_content = function(&$art) {
 		$get = function(&$s) {
 			$content = '';
 			foreach($s->query('//div[@class="entry-content" or @class="story-body"]/*') as $p)
@@ -277,18 +284,22 @@ $datas['paulkrugman'] = function() {
 		if($content) { $art->content = "USED GOOGLE CACHE<br><br>$content"; return; }
 		$art->saved = false;
 	};
-	$data->add_getter(rss_getter($url), $get_content);
-	return $data;
-};
-
-$datas['resumenelpais'] = function() {
-	$url = "http://elpais.com/agr/rss/el_resumen_del_dia/a";
-	$data = new RSSMetadata("resumenelpais", "Resumen del dia - El Pais", $url);
-	set_rss_getter($data, $url);
-	$data->set_get_content(function(&$art) {
-		$s = new scrapper($art->link);
-		$art->content = $s->node('//*[@id="cuerpo_noticia"]')->html();
-	});
+	$data->add_getter(rss_getter($url), $get_content);*/
+	$get_links = function() {
+		$arts = array(); $count = 1;
+		$s = new scrapper("http://www.nytimes.com/column/paul-krugman");
+		foreach($s->query('//a[@class="story-link"]') as $a) {
+			$link = $a->attr('href');
+			$title = $s->node('.//h2', $a->node)->text();
+			$author = "Paul Krugman";
+			$content = $s->node('.//p', $a->node)->html();
+			$arts[$link] = new Article($link, $title, $author, $content);
+			if($count++ >= 3) break;
+		}
+		return $arts;
+	};
+	$data->add_getter(rss_getter($url, 3), $ff_get_content);
+	$data->add_getter($get_links, $ff_get_content);
 	return $data;
 };
 
@@ -336,17 +347,6 @@ $datas['bloomrochekelly'] = function() {
 	return $data;
 };
 
-$datas['bloomnoahsmith'] = function() {
-	$url = "http://www.bloombergview.com/rss/contributors/noah-smith.rss";
-	$data = new RSSMetadata("bloomnoahsmith", "Bloomberg View - Articles by Noah Smith", $url);
-	set_rss_getter($data, $url);
-	$data->set_get_content(function(&$art) {
-		$s = new scrapper($art->link);
-		$art->content = $s->node('//div[@itemprop="articleBody"]')->html();
-	});
-	return $data;
-};
-
 $datas['bloombergview'] = function() {
 	$data = new RSSMetadata("bloombergview", "Bloomberg View", "http://www.bloombergview.com/");
 	$get_content = function(&$art) {
@@ -361,36 +361,24 @@ $datas['bloombergview'] = function() {
 		$art->content .= $s->node('//div[@id="content"]//img')->html();
 		$art->content .= $s->node('//article/div[2]')->html();
 	};
-	$get_arts = function($url, $author_='') { return function() use($url, $author_) {
-		$arts = array();
-		$s = new scrapper($url);
-		$i = 0;
-		foreach($s->query('//article') as $article) {
-			if(++$i>5) break;
-			$a = $s->node('.//a', $article->node);
-			$link = $a->attr('href'); $link = starts_with($link, '/') ? str_from($link, '/') : $link;
-			$link = "http://www.bloombergview.com/" . $link;
-			$arts[] = new Article($link, '', $author_);
-		}
-		return $arts;
-	}; };
-	$data->add_getter($get_arts("http://www.bloombergview.com/quicktake", "QuickTake"), $get_content);
-	$data->add_getter($get_arts("http://www.bloombergview.com/topics/latin-america", "Latin America"), $get_content);
-	$data->add_getter($get_arts("http://www.bloombergview.com/topics/economics", "Economics"), $get_content);
-	$data->add_getter($get_arts("http://www.bloombergview.com/contributors/noah-smith", "Noah Smith"), $get_content);
+	$data->add_getter(rss_getter("http://www.bloomberg.com/view/rss/topics/latin-america.rss", 3), $get_content);
+	$data->add_getter(rss_getter("http://www.bloomberg.com/view/rss/topics/brazil.rss", 3), $get_content);
+	$data->add_getter(rss_getter("http://www.bloomberg.com/view/rss/topics/economics.rss", 3), $get_content);
+	$data->add_getter(rss_getter("http://www.bloomberg.com/view/rss/contributors/mohamed-a-el-erian.rss", 3), $get_content);
+	$data->add_getter(rss_getter("http://www.bloomberg.com/view/rss/contributors/noah-smith.rss", 3), $get_content);
 	return $data;
 };
 
 $datas['aleberco'] = function() {
-	$url = "http://www.diariobae.com/notas/category/columnistas/alejandro-bercovich";
+	$url = "http://www.diariobae.com/tag/index/32933/alejandro-bercovich";
 	$data = new RSSMetadata("aleberco", "Alejandro Bercovich", $url);
 	$get_arts = function() use($url) {
 		$s = new scrapper($url);
 		$arts = array();
 		foreach($s->query('//div[@id="content"]//h2/a') as $a) {
-			$link = $a->attr('href');
+			$link = "http://www.diariobae.com/" . $a->attr('href');
 			$title = $a->text();
-			$arts[] = new Article($link, $title);
+			$arts[] = new Article($link, $title, "Alejandro Bercovich");
 		}
 		return $arts;
 	};
@@ -677,7 +665,7 @@ $datas['levitsky'] = function() {
 		$arts = array();
 		$s = new Scrapper($url);
 		$a = $s->node('//a[@class="atm-title"]');
-		$arts[] = new Article("http://larepublica.pe".$a->attr('href'), $a->text(), "Steven Levitsky");
+		$arts[] = new Article($a->attr('href'), $a->text(), "Steven Levitsky");
 		return $arts;
 	};
 	$get_content = function(&$art) {

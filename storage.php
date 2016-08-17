@@ -32,9 +32,9 @@ class Storage {
 	
 	function connect() {
 		$servername = "localhost";
-		$username = "998843";
-		$password = "pterosaurio1";
-		$dbname = "998843";
+		$username = "adminMJpqMG6";
+		$password = "LkWjY_vsTqK1";
+		$dbname = "medios";
 		$this->conn = new mysqli($servername, $username, $password, $dbname);
 		if ($this->conn->connect_error)
 			echo "Connection failed: " . $this->conn->connect_error;
@@ -45,16 +45,17 @@ class Storage {
 		$tms_index = $this->table_name . "_tms_index";
 		$sql =
 			"CREATE TABLE $this->table_name (
-				link VARCHAR(256) PRIMARY KEY,
+				link VARCHAR(255) PRIMARY KEY,
 				tms INTEGER NOT NULL,
 				title TEXT,
 				author TEXT,
 				content LONGTEXT
 			)";
 		$res = $this->conn->query($sql);
-		$res = $res && $this->conn->query("CREATE INDEX $link_index ON $this->table_name (link)");
+		if(!$res) die("Table $this->table_name creation failed. " . $this->conn->error);
+		$res = $this->conn->query("CREATE INDEX $link_index ON $this->table_name (link)");
 		$res = $res && $this->conn->query("CREATE INDEX $tms_index ON $this->table_name (tms)");
-		if(!$res) die("Table $this->table_name creation failed." . $this->conn->error);
+		if(!$res) die("Indexes for table $this->table_name creation failed. " . $this->conn->error);
 	}
 	
 	function erase_table() {
